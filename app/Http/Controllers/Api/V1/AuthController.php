@@ -3,11 +3,16 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Dtos\LoginRequestDTO;
+use App\Dtos\RegisterRequestDTO;
 use App\Http\Controllers\Api\ApiController;
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Services\UserService\UserServiceInterface;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Auth;
+use Illuminate\Http\Response;
 
 class AuthController extends ApiController
 {
@@ -24,7 +29,11 @@ class AuthController extends ApiController
         $this->userService = $userService;
     }
 
-    public function login(Request $request)
+    /**
+     * @param LoginRequest $request
+     * @return JsonResponse
+     */
+    public function login(LoginRequest $request): JsonResponse
     {
         $email = $request->post('email');
         $password = $request->post('password');
@@ -32,7 +41,7 @@ class AuthController extends ApiController
         if (!$email || !$password) {
             return response()->json([
                 'message' => 'Thông tin không chính xác',
-            ], 400);
+            ], Response::HTTP_BAD_REQUEST);
         }
         $loginRequestDTO = new LoginRequestDTO(
             $email,
@@ -47,19 +56,58 @@ class AuthController extends ApiController
                 'access_token' => $token,
                 'token_type' => 'Bearer',
                 'user' => new UserResource($user),
-            ]);
+            ], Response::HTTP_OK);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => $e->getMessage(),
-            ], 400);
+            ], Response::HTTP_BAD_REQUEST);
         }
     }
 
-    public function logout(Request $request)
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
+        
         return response()->json([
             'message' => 'success',
-        ], 200);
+        ], Response::HTTP_OK);
+    }
+
+    /**
+     * @param RegisterRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function register(RegisterRequest $request): JsonResponse
+    {
+        $email = $request->post('email');
+        $password = $request->post('password');
+        $name = $request->post('name');
+        if (!$email || !$password || !$name) {
+            return response()->json([
+                'message' => 'Thông tin không chính xác',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        $registerDto = new RegisterRequestDTO(
+          $name,
+          $email,
+          $password,
+        );
+
+        try {
+            $this->userService->register($registerDto);
+
+            return response()->json([
+                'message' => 'success',
+            ], Response::HTTP_OK);
+        } catch (\Exception $exception) {
+            return response()->json([
+                'message' => false,
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
     }
 }

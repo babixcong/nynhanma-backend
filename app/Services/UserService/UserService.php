@@ -3,6 +3,7 @@
 namespace App\Services\UserService;
 
 use App\Dtos\LoginRequestDTO;
+use App\Dtos\RegisterRequestDTO;
 use App\Models\User;
 use App\Repositories\UserRepository\UserRepositoryInterface;
 use App\Services\UserService\UserServiceInterface;
@@ -46,5 +47,14 @@ class UserService implements UserServiceInterface
     public function createToken(User $user): string
     {
         return $user->createToken('authToken')->plainTextToken;
+    }
+
+    public function register(RegisterRequestDTO $registerRequestDTO): void
+    {
+        $this->userRepository->create([
+            'name' => $registerRequestDTO->getName(),
+            'email' => $registerRequestDTO->getEmail(),
+            'password' => bcrypt($registerRequestDTO->getPassword()),
+        ]);
     }
 }
