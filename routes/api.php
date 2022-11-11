@@ -29,3 +29,9 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('ping', function () {
     return response()->json('pong');
 });
+
+Route::get('/quote', function () {
+    return response()->json([
+        'data' => config('quotes.quotes')[0],
+    ], 200);
+});
